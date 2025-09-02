@@ -1,7 +1,10 @@
-import React from "react";
+import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 
 export default function AddSchool() {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitMessage, setSubmitMessage] = useState("");
+  
   const {
     register,
     handleSubmit,
@@ -10,41 +13,53 @@ export default function AddSchool() {
   } = useForm();
 
   const onSubmit = async (data) => {
-    // Check file size before submission
-    if (data.image && data.image[0]) {
-      const fileSize = data.image[0].size;
-      const maxSize = 5 * 1024 * 1024; // 5MB
-      
-      if (fileSize > maxSize) {
-        alert("Image file is too large! Please select an image smaller than 5MB.");
-        return;
-      }
-    }
-
-    const formData = new FormData();
-    Object.entries(data).forEach(([key, value]) => {
-      if (key === "image" && value[0]) {
-        formData.append(key, value[0]);
-      } else {
-        formData.append(key, value);
-      }
-    });
+    setIsSubmitting(true);
+    setSubmitMessage("");
     
     try {
+      // Check file size before submission
+      if (data.image && data.image[0]) {
+        const fileSize = data.image[0].size;
+        const maxSize = 5 * 1024 * 1024; // 5MB
+        
+        if (fileSize > maxSize) {
+          setSubmitMessage("Image file is too large! Please select an image smaller than 5MB.");
+          setIsSubmitting(false);
+          return;
+        }
+      }
+
+      const formData = new FormData();
+      Object.entries(data).forEach(([key, value]) => {
+        if (key === "image" && value[0]) {
+          formData.append(key, value[0]);
+        } else {
+          formData.append(key, value);
+        }
+      });
+      
+      console.log("Submitting form data:", data);
+      
       const res = await fetch("/api/addSchool", {
         method: "POST",
         body: formData,
       });
       
+      const responseData = await res.json();
+      
       if (res.ok) {
+        setSubmitMessage("School added successfully!");
         reset();
-        alert("School added successfully!");
+        // Clear message after 3 seconds
+        setTimeout(() => setSubmitMessage(""), 3000);
       } else {
-        const errorData = await res.json();
-        alert(`Error adding school: ${errorData.error || 'Unknown error'}`);
+        setSubmitMessage(`Error adding school: ${responseData.error || 'Unknown error'}`);
       }
     } catch (err) {
-      alert("Network error. Please check your connection and try again.");
+      console.error("Form submission error:", err);
+      setSubmitMessage("Network error. Please check your connection and try again.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -92,15 +107,27 @@ export default function AddSchool() {
             Add New School
           </h2>
 
+          {/* Submit Message */}
+          {submitMessage && (
+            <div className={`p-3 rounded-md text-sm ${
+              submitMessage.includes("successfully") 
+                ? "bg-green-50 text-green-700 border border-green-200" 
+                : "bg-red-50 text-red-700 border border-red-200"
+            }`}>
+              {submitMessage}
+            </div>
+          )}
+
           {/* Form fields */}
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Name
+                Name *
               </label>
               <input
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 {...register("name", { required: "Name is required" })}
+                placeholder="Enter school name"
               />
               {errors.name && (
                 <p className="mt-1 text-sm text-red-500">{errors.name.message}</p>
@@ -109,11 +136,13 @@ export default function AddSchool() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Address
+                Address *
               </label>
-              <input
+              <textarea
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                rows="3"
                 {...register("address", { required: "Address is required" })}
+                placeholder="Enter complete address"
               />
               {errors.address && (
                 <p className="mt-1 text-sm text-red-500">
@@ -122,75 +151,89 @@ export default function AddSchool() {
               )}
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                City
-              </label>
-              <input
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                {...register("city", { required: "City is required" })}
-              />
-              {errors.city && (
-                <p className="mt-1 text-sm text-red-500">{errors.city.message}</p>
-              )}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  City *
+                </label>
+                <input
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  {...register("city", { required: "City is required" })}
+                  placeholder="Enter city"
+                />
+                {errors.city && (
+                  <p className="mt-1 text-sm text-red-500">{errors.city.message}</p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  State *
+                </label>
+                <input
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  {...register("state", { required: "State is required" })}
+                  placeholder="Enter state"
+                />
+                {errors.state && (
+                  <p className="mt-1 text-sm text-red-500">
+                    {errors.state.message}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Contact *
+                </label>
+                <input
+                  type="tel"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  {...register("contact", { 
+                    required: "Contact is required",
+                    pattern: {
+                      value: /^[0-9]{10,15}$/,
+                      message: "Please enter a valid phone number (10-15 digits)"
+                    }
+                  })}
+                  placeholder="Enter contact number"
+                />
+                {errors.contact && (
+                  <p className="mt-1 text-sm text-red-500">
+                    {errors.contact.message}
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Email *
+                </label>
+                <input
+                  type="email"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  {...register("email_id", {
+                    required: "Email is required",
+                    pattern: {
+                      value: /^[^@\s]+@[^@\s]+\.[^@\s]+$/,
+                      message: "Invalid email format",
+                    },
+                  })}
+                  placeholder="Enter email address"
+                />
+                {errors.email_id && (
+                  <p className="mt-1 text-sm text-red-500">
+                    {errors.email_id.message}
+                  </p>
+                )}
+              </div>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                State
-              </label>
-              <input
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                {...register("state", { required: "State is required" })}
-              />
-              {errors.state && (
-                <p className="mt-1 text-sm text-red-500">
-                  {errors.state.message}
-                </p>
-              )}
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Contact
-              </label>
-              <input
-                type="number"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                {...register("contact", { required: "Contact is required" })}
-              />
-              {errors.contact && (
-                <p className="mt-1 text-sm text-red-500">
-                  {errors.contact.message}
-                </p>
-              )}
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Email
-              </label>
-              <input
-                type="email"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                {...register("email_id", {
-                  required: "Email is required",
-                  pattern: {
-                    value: /^[^@\s]+@[^@\s]+\.[^@\s]+$/,
-                    message: "Invalid email format",
-                  },
-                })}
-              />
-              {errors.email_id && (
-                <p className="mt-1 text-sm text-red-500">
-                  {errors.email_id.message}
-                </p>
-              )}
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Image
+                Image *
               </label>
               <input
                 type="file"
@@ -211,9 +254,24 @@ export default function AddSchool() {
 
           <button
             type="submit"
-            className="w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
+            disabled={isSubmitting}
+            className={`w-full py-2 px-4 rounded-md font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 ${
+              isSubmitting
+                ? "bg-gray-400 text-gray-200 cursor-not-allowed"
+                : "bg-indigo-600 text-white hover:bg-indigo-700"
+            }`}
           >
-            Add School
+            {isSubmitting ? (
+              <span className="flex items-center justify-center">
+                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Adding School...
+              </span>
+            ) : (
+              "Add School"
+            )}
           </button>
         </form>
       </div>

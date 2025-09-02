@@ -11,16 +11,7 @@ export const config = {
 export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).end();
 
-  // Test DB connection at the beginning
-  try {
-    const conn = await getConnection();
-    console.log("Successfully connected to DB");
-    await conn.end();
-  } catch (err) {
-    console.error("DB connection failed:", err.message);
-    res.status(500).json({ error: "Database connection failed", details: err.message });
-    return;
-  }
+  console.log("addSchool API called");
 
   const form = new IncomingForm();
   form.keepExtensions = true;
@@ -36,7 +27,12 @@ export default async function handler(req, res) {
     console.log("FIELDS:", fields);
     console.log("FILES:", files);
 
+    let conn;
     try {
+      // Get database connection
+      conn = await getConnection();
+      console.log("Successfully connected to DB");
+
       // Handle image upload - convert to base64 and store in database
       let imageBase64 = "";
       const imageFile = files.image
@@ -61,33 +57,65 @@ export default async function handler(req, res) {
           // Clean up temporary file
           fs.unlinkSync(imageFile.filepath);
           
+          console.log("Image processed successfully, size:", imageBuffer.length);
         } catch (fileErr) {
           console.error("File processing error:", fileErr);
           res.status(500).json({ error: "Image processing failed", details: fileErr.message });
           return;
         }
+      } else {
+        console.log("No image file provided");
+      }
+
+      // Validate required fields
+      const requiredFields = ['name', 'address', 'city', 'state', 'contact', 'email_id'];
+      for (const field of requiredFields) {
+        if (!fields[field] || !fields[field][0] || fields[field][0].trim() === '') {
+          res.status(400).json({ error: `Field '${field}' is required` });
+          return;
+        }
       }
 
       // Insert into DB with base64 image data
-      const conn = await getConnection();
-      await conn.execute(
+      console.log("Inserting school data into database...");
+      const [result] = await conn.execute(
         "INSERT INTO schools (name, address, city, state, contact, image, email_id) VALUES (?, ?, ?, ?, ?, ?, ?)",
         [
-          fields.name[0],
-          fields.address[0],
-          fields.city[0],
-          fields.state[0],
+          fields.name[0].trim(),
+          fields.address[0].trim(),
+          fields.city[0].trim(),
+          fields.state[0].trim(),
           Number(fields.contact[0]), // ensure it's a number
           imageBase64,
-          fields.email_id[0],
+          fields.email_id[0].trim(),
         ]
       );
-      await conn.end();
 
-      res.status(200).json({ success: true });
+      console.log("School added successfully with ID:", result.insertId);
+      res.status(200).json({ 
+        success: true, 
+        message: "School added successfully",
+        schoolId: result.insertId 
+      });
+
     } catch (dbErr) {
       console.error("DB ERROR:", dbErr);
-      res.status(500).json({ error: "Database error", details: dbErr.message });
+      res.status(500).json({ 
+        error: "Database error", 
+        details: dbErr.message,
+        code: dbErr.code,
+        errno: dbErr.errno
+      });
+    } finally {
+      // Always release the connection back to the pool
+      if (conn) {
+        try {
+          await conn.release();
+          console.log("Database connection released back to pool");
+        } catch (releaseError) {
+          console.error("Error releasing connection:", releaseError);
+        }
+      }
     }
   });
 }
