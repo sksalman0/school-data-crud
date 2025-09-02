@@ -125,7 +125,8 @@ export default function AddSchool() {
                 Name *
               </label>
               <input
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900 placeholder-gray-500 bg-white"
+                style={{ color: '#111827' }}
                 {...register("name", { required: "Name is required" })}
                 placeholder="Enter school name"
               />
@@ -139,7 +140,8 @@ export default function AddSchool() {
                 Address *
               </label>
               <textarea
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900 placeholder-gray-500 bg-white"
+                style={{ color: '#111827' }}
                 rows="3"
                 {...register("address", { required: "Address is required" })}
                 placeholder="Enter complete address"
@@ -157,7 +159,8 @@ export default function AddSchool() {
                   City *
                 </label>
                 <input
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900 placeholder-gray-500 bg-white"
+                  style={{ color: '#111827' }}
                   {...register("city", { required: "City is required" })}
                   placeholder="Enter city"
                 />
@@ -171,7 +174,8 @@ export default function AddSchool() {
                   State *
                 </label>
                 <input
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900 placeholder-gray-500 bg-white"
+                  style={{ color: '#111827' }}
                   {...register("state", { required: "State is required" })}
                   placeholder="Enter state"
                 />
@@ -190,7 +194,8 @@ export default function AddSchool() {
                 </label>
                 <input
                   type="tel"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900 placeholder-gray-500 bg-white"
+                  style={{ color: '#111827' }}
                   {...register("contact", { 
                     required: "Contact is required",
                     pattern: {
@@ -213,7 +218,8 @@ export default function AddSchool() {
                 </label>
                 <input
                   type="email"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900 placeholder-gray-500 bg-white"
+                  style={{ color: '#111827' }}
                   {...register("email_id", {
                     required: "Email is required",
                     pattern: {
