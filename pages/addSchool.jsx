@@ -15,49 +15,79 @@ export default function AddSchool() {
   const onSubmit = async (data) => {
     setIsSubmitting(true);
     setSubmitMessage("");
-    
+
     try {
-      // Check file size before submission
-      if (data.image && data.image[0]) {
-        const fileSize = data.image[0].size;
+      let imageUrl = "";
+      const imageFile = data.image && data.image[0];
+
+      // Step 1: Upload image if it exists
+      if (imageFile) {
+        const fileSize = imageFile.size;
         const maxSize = 5 * 1024 * 1024; // 5MB
-        
+
         if (fileSize > maxSize) {
-          setSubmitMessage("Image file is too large! Please select an image smaller than 5MB.");
+          setSubmitMessage(
+            "Image file is too large! Please select an image smaller than 5MB."
+          );
           setIsSubmitting(false);
           return;
         }
+
+        const uploadResponse = await fetch(`/api/upload`, {
+          method: "POST",
+          headers: {
+            "x-filename": imageFile.name,
+          },
+          body: imageFile,
+        });
+
+        if (!uploadResponse.ok) {
+          const errorData = await uploadResponse.json();
+          throw new Error(
+            `Image upload failed: ${errorData.error || "Unknown error"}${errorData.details ? ` - ${errorData.details}` : ''}`
+          );
+        }
+
+        const blob = await uploadResponse.json();
+        imageUrl = blob.url;
       }
 
-      const formData = new FormData();
-      Object.entries(data).forEach(([key, value]) => {
-        if (key === "image" && value[0]) {
-          formData.append(key, value[0]);
-        } else {
-          formData.append(key, value);
-        }
-      });
-      
-      console.log("Submitting form data:", data);
-      
+      // Step 2: Submit school data (with image URL) to the addSchool API
+      const schoolData = {
+        name: data.name,
+        address: data.address,
+        city: data.city,
+        state: data.state,
+        contact: data.contact,
+        email_id: data.email_id,
+        imageUrl: imageUrl,
+      };
+
       const res = await fetch("/api/addSchool", {
         method: "POST",
-        body: formData,
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(schoolData),
       });
-      
+
       const responseData = await res.json();
-      
+
       if (res.ok) {
         setSubmitMessage("School added successfully!");
         reset();
         // Clear message after 3 seconds
         setTimeout(() => setSubmitMessage(""), 3000);
       } else {
-        setSubmitMessage(`Error adding school: ${responseData.error || 'Unknown error'}`);
+        setSubmitMessage(
+          `Error adding school: ${responseData.error || "Unknown error"}`
+        );
       }
     } catch (err) {
       console.error("Form submission error:", err);
-      setSubmitMessage("Network error. Please check your connection and try again.");
+      setSubmitMessage(
+        `An error occurred: ${err.message || "Please check your connection and try again."}`
+      );
     } finally {
       setIsSubmitting(false);
     }
